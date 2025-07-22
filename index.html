@@ -71,15 +71,16 @@
         let gameState = {
             currentPlant: 'sunflower',
             plants: {
-                sunflower: { emoji: '🌻', waterLevel: 100, happiness: 80, potDecorated: false, lastWatered: Date.now(), lastUpdate: Date.now() },
-                rose: { emoji: '🌹', waterLevel: 100, happiness: 80, potDecorated: false, lastWatered: Date.now(), lastUpdate: Date.now() },
-                tulip: { emoji: '🌷', waterLevel: 100, happiness: 80, potDecorated: false, lastWatered: Date.now(), lastUpdate: Date.now() },
-                cactus: { emoji: '🌵', waterLevel: 100, happiness: 80, potDecorated: false, lastWatered: Date.now(), lastUpdate: Date.now() },
-                tree: { emoji: '🌳', waterLevel: 100, happiness: 80, potDecorated: false, lastWatered: Date.now(), lastUpdate: Date.now() }
+                sunflower: { emoji: '🌻', waterLevel: 100, happiness: 80, colorIndex: 0, lastWatered: Date.now(), lastUpdate: Date.now() },
+                rose: { emoji: '🌹', waterLevel: 100, happiness: 80, colorIndex: 0, lastWatered: Date.now(), lastUpdate: Date.now() },
+                tulip: { emoji: '🌷', waterLevel: 100, happiness: 80, colorIndex: 0, lastWatered: Date.now(), lastUpdate: Date.now() },
+                cactus: { emoji: '🌵', waterLevel: 100, happiness: 80, colorIndex: 0, lastWatered: Date.now(), lastUpdate: Date.now() },
+                tree: { emoji: '🌳', waterLevel: 100, happiness: 80, colorIndex: 0, lastWatered: Date.now(), lastUpdate: Date.now() }
             }
         };
 
-        // Helper function to get current plant data
+        const colors = ['', 'red', 'orange', 'yellow', 'green', 'blue', 'purple'];
+
         function getCurrentPlant() {
             return gameState.plants[gameState.currentPlant];
         }
@@ -196,10 +197,13 @@
             const pot = document.getElementById('pot');
             const plant = document.getElementById('plant');
             
-            if (currentPlant.potDecorated) {
-                pot.classList.add('decorated');
-            } else {
-                pot.classList.remove('decorated');
+            colors.forEach(color => {
+                if (color) pot.classList.remove(color);
+            });
+
+            const currentColor = colors[currentPlant.colorIndex];
+            if (currentColor) {
+                pot.classList.add(currentColor);
             }
             
             if (currentPlant.happiness > 60) {
@@ -230,15 +234,16 @@
             }
         }
 
-        // Decorate the pot
+        //decorate!
         function decoratePot() {
             const currentPlant = getCurrentPlant();
-            currentPlant.potDecorated = !currentPlant.potDecorated;
+            
+            currentPlant.colorIndex = (currentPlant.colorIndex + 1) % colors.length;
             currentPlant.happiness = Math.min(100, currentPlant.happiness + 5);
             
-            const message = currentPlant.potDecorated ? 
-                '🎨 Beautiful pot decoration added!' : 
-                '🎨 Pot decoration removed!';
+            const currentColor = colors[currentPlant.colorIndex];
+            const colorName = currentColor || 'default brown';
+            const message = `🎨 Pot is now ${colorName}!`;
             
             showNotification(3000, message);
             updateUI();
