@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grow A Plant!</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            color: #2e7d32;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .game-area {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .plant-container {
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.3s ease;
+        }
+
+        .plant-container:hover {
+            transform: scale(1.05);
+        }
+
+        .pot {
+            width: 200px;
+            height: 150px;
+            background: linear-gradient(45deg, #8d6e63, #6d4c41);
+            border-radius: 0 0 100px 100px;
+            position: relative;
+            margin: 0 auto;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+        }
+
+        .pot.decorated {
+            background: linear-gradient(45deg, #e91e63, #ad1457);
+            box-shadow: 0 8px 16px rgba(233,30,99,0.4);
+        }
+
+        .plant {
+            position: absolute;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 4em;
+            transition: all 0.5s ease;
+            animation: sway 3s ease-in-out infinite;
+        }
+
+        .plant.happy {
+            filter: brightness(1.2);
+            transform: translateX(-50%) scale(1.1);
+        }
+
+        .plant.sad {
+            filter: grayscale(50%);
+            transform: translateX(-50%) scale(0.9);
+        }
+
+        @keyframes sway {
+            0%, 100% { transform: translateX(-50%) rotate(-2deg); }
+            50% { transform: translateX(-50%) rotate(2deg); }
+        }
+
+        .stats {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.9);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            min-width: 200px;
+        }
+
+        .stat {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            font-weight: bold;
+            margin-right: 10px;
+            min-width: 80px;
+        }
+
+        .stat-bar {
+            flex: 1;
+            height: 20px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .stat-fill {
+            height: 100%;
+            transition: width 0.3s ease;
+            border-radius: 10px;
+        }
+
+        .water-fill { background: linear-gradient(90deg, #2196f3, #64b5f6); }
+        .happiness-fill { background: linear-gradient(90deg, #ffc107, #ffeb3b); }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .control-btn {
+            padding: 15px 30px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            font-weight: bold;
+        }
+
+        .water-btn {
+            background: linear-gradient(45deg, #2196f3, #64b5f6);
+            color: white;
+        }
+
+        .water-btn:hover {
+            background: linear-gradient(45deg, #1976d2, #2196f3);
+            transform: translateY(-2px);
+        }
+
+        .decorate-btn {
+            background: linear-gradient(45deg, #e91e63, #f06292);
+            color: white;
+        }
+
+        .decorate-btn:hover {
+            background: linear-gradient(45deg, #c2185b, #e91e63);
+            transform: translateY(-2px);
+        }
+
+        .plant-select {
+            background: linear-gradient(45deg, #4caf50, #66bb6a);
+            color: white;
+        }
+
+        .plant-select:hover {
+            background: linear-gradient(45deg, #388e3c, #4caf50);
+            transform: translateY(-2px);
+        }
+
+        .plant-menu {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            display: none;
+            z-index: 1000;
+        }
+
+        .plant-menu.active {
+            display: block;
+        }
+
+        .plant-options {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .plant-option {
+            padding: 15px;
+            border: 2px solid transparent;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 2em;
+            transition: all 0.3s ease;
+        }
+
+        .plant-option:hover {
+            border-color: #4caf50;
+            background: #f1f8e9;
+        }
+
+        .plant-option.selected {
+            border-color: #4caf50;
+            background: #e8f5e8;
+        }
+
+        .close-btn {
+            background: #f44336;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+
+        .notifications {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            max-width: 300px;
+        }
+
+        .notification {
+            background: rgba(76, 175, 80, 0.9);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            transform: translateX(-100%);
+            animation: slideIn 0.3s ease forwards;
+        }
+
+        @keyframes slideIn {
+            to { transform: translateX(0); }
+        }
+
+        .away-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 152, 0, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            display: none;
+            z-index: 1001;
+        }
+
+        .away-message.show {
+            display: block;
+        }
+
+        .away-message h3 {
+            color: #e65100;
+            margin-bottom: 10px;
+        }
+
+        .away-message p {
+            color: #bf360c;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <h1>🌱 Grow A Plant!</h1>
+        </div>
+
+        <div class="game-area">
+            <div class="stats">
+                <div class="stat">
+                    <span class="stat-label">💧 Water:</span>
+                    <div class="stat-bar">
+                        <div class="stat-fill water-fill" id="water-bar" style="width: 100%"></div>
+                    </div>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">😊 Happy:</span>
+                    <div class="stat-bar">
+                        <div class="stat-fill happiness-fill" id="happiness-bar" style="width: 80%"></div>
+                    </div>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">🌿 Plant:</span>
+                    <span id="plant-type">Sunflower</span>
+                </div>
+            </div>
+
+            <div class="plant-container">
+                <div class="pot" id="pot">
+                    <div class="plant" id="plant">🌻</div>
+                </div>
+            </div>
+
+            <div class="notifications" id="notifications"></div>
+
+            <div class="away-message" id="away-message">
+                <h3>Welcome back!</h3>
+                <p id="away-time"></p>
+                <p id="water-loss"></p>
+                <p id="happiness-loss"></p>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="control-btn water-btn" onclick="waterPlant()">💧 Water Plant</button>
+            <button class="control-btn decorate-btn" onclick="decoratePot()">🎨 Decorate Pot</button>
+            <button class="control-btn plant-select" onclick="showPlantMenu()">🌱 Change Plant</button>
+        </div>
+
+        <div class="plant-menu" id="plant-menu">
+            <h3>Choose Your Plant:</h3>
+            <div class="plant-options">
+                <div class="plant-option" onclick="selectPlant('sunflower', '🌻')">🌻</div>
+                <div class="plant-option" onclick="selectPlant('rose', '🌹')">🌹</div>
+                <div class="plant-option" onclick="selectPlant('tulip', '🌷')">🌷</div>
+                <div class="plant-option" onclick="selectPlant('cactus', '🌵')">🌵</div>
+                <div class="plant-option" onclick="selectPlant('tree', '🌳')">🌳</div>
+            </div>
+            <button class="close-btn" onclick="closePlantMenu()">Close</button>
+        </div>
+    </div>
+
+    <script>
+        // Game state - now stores individual plant data
+        let gameState = {
+            currentPlant: 'sunflower',
+            plants: {
+                sunflower: { emoji: '🌻', waterLevel: 100, happiness: 80, potDecorated: false, lastWatered: Date.now(), lastUpdate: Date.now() },
+                rose: { emoji: '🌹', waterLevel: 100, happiness: 80, potDecorated: false, lastWatered: Date.now(), lastUpdate: Date.now() },
+                tulip: { emoji: '🌷', waterLevel: 100, happiness: 80, potDecorated: false, lastWatered: Date.now(), lastUpdate: Date.now() },
+                cactus: { emoji: '🌵', waterLevel: 100, happiness: 80, potDecorated: false, lastWatered: Date.now(), lastUpdate: Date.now() },
+                tree: { emoji: '🌳', waterLevel: 100, happiness: 80, potDecorated: false, lastWatered: Date.now(), lastUpdate: Date.now() }
+            }
+        };
+
+        // Helper function to get current plant data
+        function getCurrentPlant() {
+            return gameState.plants[gameState.currentPlant];
+        }
+
+        // Load game data on startup
+        function loadGame() {
+            try {
+                const savedData = localStorage.getItem('plantCareGame');
+                if (savedData) {
+                    const parsed = JSON.parse(savedData);
+                    
+                    // Merge saved data with default structure
+                    if (parsed.currentPlant) {
+                        gameState.currentPlant = parsed.currentPlant;
+                    }
+                    if (parsed.plants) {
+                        // Merge each plant's data, keeping defaults for missing plants
+                        Object.keys(parsed.plants).forEach(plantType => {
+                            if (gameState.plants[plantType]) {
+                                gameState.plants[plantType] = { ...gameState.plants[plantType], ...parsed.plants[plantType] };
+                            }
+                        });
+                    }
+                    
+                    // Apply decay to ALL plants based on time away
+                    const now = Date.now();
+                    let totalWaterLost = 0;
+                    let totalHappinessLost = 0;
+                    let maxMinutesAway = 0;
+                    
+                    Object.keys(gameState.plants).forEach(plantType => {
+                        const plant = gameState.plants[plantType];
+                        const timeSinceLastUpdate = now - (plant.lastUpdate || now);
+                        const minutesAway = timeSinceLastUpdate / (1000 * 60);
+                        
+                        if (minutesAway > maxMinutesAway) {
+                            maxMinutesAway = minutesAway;
+                        }
+                        
+                        if (minutesAway > 1) {
+                            // Calculate decay for this plant
+                            const waterDecay = Math.min(minutesAway * 1.5, 80);
+                            const happinessDecay = Math.min(minutesAway * 1, 60);
+                            
+                            // Apply decay
+                            const oldWaterLevel = plant.waterLevel;
+                            const oldHappiness = plant.happiness;
+                            
+                            plant.waterLevel = Math.max(0, plant.waterLevel - waterDecay);
+                            plant.happiness = Math.max(0, plant.happiness - happinessDecay);
+                            
+                            // Track total losses for current plant display
+                            if (plantType === gameState.currentPlant) {
+                                totalWaterLost = oldWaterLevel - plant.waterLevel;
+                                totalHappinessLost = oldHappiness - plant.happiness;
+                            }
+                        }
+                        
+                        // Update timestamp
+                        plant.lastUpdate = now;
+                    });
+                    
+                    // Show welcome back message if away for more than 1 minute
+                    if (maxMinutesAway > 1) {
+                        showWelcomeBackMessage(maxMinutesAway, totalWaterLost, totalHappinessLost);
+                    }
+                }
+            } catch (error) {
+                console.log('Could not load game data:', error);
+            }
+            
+            updateUI();
+            saveGame();
+        }
+
+        // Save game data
+        function saveGame() {
+            try {
+                // Update current plant's timestamp
+                getCurrentPlant().lastUpdate = Date.now();
+                
+                localStorage.setItem('plantCareGame', JSON.stringify(gameState));
+                
+                // Also save to electron if available
+                if (window.electronAPI) {
+                    window.electronAPI.saveGameData(gameState);
+                }
+            } catch (error) {
+                console.log('Could not save game data:', error);
+            }
+        }
+
+
+        // Welcome back msg
+        function showWelcomeBackMessage(minutesAway, waterLost, happinessLost) {
+            const hours = Math.floor(minutesAway / 60);
+            const mins = Math.floor(minutesAway % 60);
+            
+            let timeString = '';
+            if (hours > 0) {
+                timeString = `You were away for ${hours} hour${hours > 1 ? 's' : ''} and ${mins} minute${mins > 1 ? 's' : ''}.`;
+            } else {
+                timeString = `You were away for ${mins} minute${mins > 1 ? 's' : ''}.`;
+            }
+            
+            showNotification(10000, `🏠 Welcome back! ${timeString}`);
+            showNotification(10000, `You lost ${Math.round(waterLost/100)}% water and ${Math.round(happinessLost/100)}% happiness.`);
+        }
+
+
+        // Update UI elements
+        function updateUI() {
+            const currentPlant = getCurrentPlant();
+            
+            document.getElementById('water-bar').style.width = currentPlant.waterLevel + '%';
+            document.getElementById('happiness-bar').style.width = currentPlant.happiness + '%';
+            document.getElementById('plant-type').textContent = gameState.currentPlant.charAt(0).toUpperCase() + gameState.currentPlant.slice(1);
+            document.getElementById('plant').textContent = currentPlant.emoji;
+            
+            const pot = document.getElementById('pot');
+            const plant = document.getElementById('plant');
+            
+            if (currentPlant.potDecorated) {
+                pot.classList.add('decorated');
+            } else {
+                pot.classList.remove('decorated');
+            }
+            
+            if (currentPlant.happiness > 60) {
+                plant.classList.add('happy');
+                plant.classList.remove('sad');
+            } else if (currentPlant.happiness < 40) {
+                plant.classList.add('sad');
+                plant.classList.remove('happy');
+            } else {
+                plant.classList.remove('happy', 'sad');
+            }
+        }
+
+        // Water the plant
+        function waterPlant() {
+            const currentPlant = getCurrentPlant();
+            
+            if (currentPlant.waterLevel < 100) {
+                currentPlant.waterLevel = Math.min(100, currentPlant.waterLevel);
+                currentPlant.happiness = Math.min(100, currentPlant.happiness);
+                currentPlant.lastWatered = Date.now();
+                
+                showNotification(3000, '💧 Plant watered! Your plant is happy!');
+                updateUI();
+                saveGame();
+            } else {
+                showNotification(3000, '🌊 Plant is already well watered!');
+            }
+        }
+
+        // Decorate the pot
+        function decoratePot() {
+            const currentPlant = getCurrentPlant();
+            currentPlant.potDecorated = !currentPlant.potDecorated;
+            currentPlant.happiness = Math.min(100, currentPlant.happiness + 5);
+            
+            const message = currentPlant.potDecorated ? 
+                '🎨 Beautiful pot decoration added!' : 
+                '🎨 Pot decoration removed!';
+            
+            showNotification(3000, message);
+            updateUI();
+            saveGame();
+        }
+
+        // Show plant selection menu
+        function showPlantMenu() {
+            document.getElementById('plant-menu').classList.add('active');
+        }
+
+        // Close plant selection menu
+        function closePlantMenu() {
+            document.getElementById('plant-menu').classList.remove('active');
+        }
+
+        // Select a new plant
+        function selectPlant(type, emoji) {
+            // Save current plant state before switching
+            saveGame();
+            
+            // Switch to new plant
+            gameState.currentPlant = type;
+            
+            // Add small happiness bonus for attention
+            const newPlant = getCurrentPlant();
+            newPlant.happiness = Math.min(100, newPlant.happiness + 5);
+            
+            showNotification(3000, `🌱 Switched to your ${type}! ${emoji}`);
+            updateUI();
+            saveGame();
+            closePlantMenu();
+        }
+
+        // Show notification
+        function showNotification(time, message) {
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.textContent = message;
+            
+            document.getElementById('notifications').appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, time);
+        }
+
+        // Game loop - decrease water and happiness over time while playing
+        function gameLoop() {
+            // Update timestamp
+            gameState.lastUpdate = Date.now();
+            
+            // Decrease water level every minute while playing
+            gameState.waterLevel = Math.max(0, gameState.waterLevel - 2);
+            
+            // Decrease happiness every minute while playing
+            gameState.happiness = Math.max(0, gameState.happiness - 1);
+            
+            // Extra happiness decrease if water is very low
+            if (gameState.waterLevel < 20) {
+                gameState.happiness = Math.max(0, gameState.happiness - 2);
+            }
+            
+            // Show warning notifications
+            if (gameState.waterLevel <= 10) {
+                showNotification(3000, '🚨 Your plant is very thirsty!');
+            } else if (gameState.waterLevel <= 30) {
+                showNotification(3000, '💧 Your plant needs water soon!');
+            }
+            
+            if (gameState.happiness <= 10) {
+                showNotification(3000, '😢 Your plant is very sad!');
+            } else if (gameState.happiness <= 30) {
+                showNotification(3000,'😐 Your plant needs attention!');
+            }
+            
+            updateUI();
+            saveGame();
+        }
+
+        // Save game state when page is about to unload
+        window.addEventListener('beforeunload', function() {
+            saveGame();
+        });
+
+        // Save periodically in case of unexpected closure
+        setInterval(saveGame, 30000); // Save every 30 seconds
+
+        // Initialize game
+        loadGame();
+        setInterval(gameLoop, 60000); // Run every 60 seconds (1 minute)
+    </script>
+</body>
+</html>
