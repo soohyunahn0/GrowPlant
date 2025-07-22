@@ -13,7 +13,7 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js')
     },
     title: 'Grow Your Plant!',
-    icon: path.join(__dirname, 'assets/icon.png'), // Add an icon if you have one
+    icon: path.join(__dirname, 'assets/icon.png'),
     resizable: true,
     minWidth: 600,
     minHeight: 500

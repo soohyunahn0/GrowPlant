@@ -91,7 +91,7 @@
                 if (savedData) {
                     const parsed = JSON.parse(savedData);
                     
-                    // Merge saved data with default structure
+                    // Merge saved data
                     if (parsed.currentPlant) {
                         gameState.currentPlant = parsed.currentPlant;
                     }
@@ -120,29 +120,24 @@
                         }
                         
                         if (minutesAway > 1) {
-                            // Calculate decay for this plant
                             const waterDecay = Math.min(minutesAway * 1.5, 80);
                             const happinessDecay = Math.min(minutesAway * 1, 60);
                             
-                            // Apply decay
                             const oldWaterLevel = plant.waterLevel;
                             const oldHappiness = plant.happiness;
                             
                             plant.waterLevel = Math.max(0, plant.waterLevel - waterDecay);
                             plant.happiness = Math.max(0, plant.happiness - happinessDecay);
                             
-                            // Track total losses for current plant display
                             if (plantType === gameState.currentPlant) {
                                 totalWaterLost = oldWaterLevel - plant.waterLevel;
                                 totalHappinessLost = oldHappiness - plant.happiness;
                             }
                         }
                         
-                        // Update timestamp
                         plant.lastUpdate = now;
                     });
                     
-                    // Show welcome back message if away for more than 1 minute
                     if (maxMinutesAway > 1) {
                         showWelcomeBackMessage(maxMinutesAway, totalWaterLost, totalHappinessLost);
                     }
@@ -158,12 +153,11 @@
         // Save game data
         function saveGame() {
             try {
-                // Update current plant's timestamp
                 getCurrentPlant().lastUpdate = Date.now();
                 
                 localStorage.setItem('plantCareGame', JSON.stringify(gameState));
                 
-                // Also save to electron if available
+                // Save to electron if available
                 if (window.electronAPI) {
                     window.electronAPI.saveGameData(gameState);
                 }
@@ -251,25 +245,19 @@
             saveGame();
         }
 
-        // Show plant selection menu
         function showPlantMenu() {
             document.getElementById('plant-menu').classList.add('active');
         }
 
-        // Close plant selection menu
         function closePlantMenu() {
             document.getElementById('plant-menu').classList.remove('active');
         }
 
         // Select a new plant
         function selectPlant(type, emoji) {
-            // Save current plant state before switching
             saveGame();
-            
-            // Switch to new plant
             gameState.currentPlant = type;
             
-            // Add small happiness bonus for attention
             const newPlant = getCurrentPlant();
             newPlant.happiness = Math.min(100, newPlant.happiness + 5);
             
@@ -297,10 +285,8 @@
             // Update timestamp
             gameState.lastUpdate = Date.now();
             
-            // Decrease water level every minute while playing
             gameState.waterLevel = Math.max(0, gameState.waterLevel - 2);
             
-            // Decrease happiness every minute while playing
             gameState.happiness = Math.max(0, gameState.happiness - 1);
             
             // Extra happiness decrease if water is very low
@@ -308,7 +294,6 @@
                 gameState.happiness = Math.max(0, gameState.happiness - 2);
             }
             
-            // Show warning notifications
             if (gameState.waterLevel <= 10) {
                 showNotification(3000, '🚨 Your plant is very thirsty!');
             } else if (gameState.waterLevel <= 30) {
