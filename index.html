@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <title>Grow A Plant!</title>
+    <style></style>
 </head>
 <body>
     <div class="game-container">
@@ -35,7 +36,7 @@
                     <span id="plant-type">Sunflower</span>
                 </div>
                 <div class="stat">
-                    <span class="stat-label">Status:</span>
+                    <span class="stat-label">☝️ Status:</span>
                     <span id="plant-status">Alive</span>
                 </div>
             </div>
@@ -55,15 +56,17 @@
         </div>
 
         <div class="plant-menu" id="plant-menu">
-            <h3>Choose Your Plant:</h3>
-            <div class="plant-options">
-                <div class="plant-option" onclick="selectPlant('sunflower', '🌻')">🌻</div>
-                <div class="plant-option" onclick="selectPlant('rose', '🌹')">🌹</div>
-                <div class="plant-option" onclick="selectPlant('tulip', '🌷')">🌷</div>
-                <div class="plant-option" onclick="selectPlant('cactus', '🌵')">🌵</div>
-                <div class="plant-option" onclick="selectPlant('tree', '🌳')">🌳</div>
+            <div>
+                <h3>Choose Your Plant:</h3>
+                <div class="plant-options">
+                    <div class="plant-option" onclick="selectPlant('sunflower', '🌻')">🌻</div>
+                    <div class="plant-option" onclick="selectPlant('rose', '🌹')">🌹</div>
+                    <div class="plant-option" onclick="selectPlant('tulip', '🌷')">🌷</div>
+                    <div class="plant-option" onclick="selectPlant('cactus', '🌵')">🌵</div>
+                    <div class="plant-option" onclick="selectPlant('tree', '🌳')">🌳</div>
+                </div>
+                <button class="close-btn" onclick="closePlantMenu()">Close</button>
             </div>
-            <button class="close-btn" onclick="closePlantMenu()">Close</button>
         </div>
     </div>
 
@@ -77,7 +80,7 @@
     </div>
 
     <script>
-        // minutes it takes for plant to die at 0 water (doesn't die immediately at 0 water)
+        // hours it takes for plant to die at 0 water (doesn't die immediately at 0 water)
         const plantConfigs = {
             sunflower: { emoji: '🌻', waterLossRate: 2.0, deathTime: 5 }, 
             rose: { emoji: '🌹', waterLossRate: 2.5, deathTime: 3 },
@@ -116,40 +119,24 @@
 
         // Load game data on startup
         function loadGame() {
-            try {
-                const savedData = localStorage.getItem('plantCareGame');
-                if (savedData) {
-                    const parsed = JSON.parse(savedData);
-                    
-                    if (parsed.currentPlant) {
-                        gameState.currentPlant = parsed.currentPlant;
-                    }
-                    if (parsed.plants) {
-                        gameState.plants = parsed.plants;
-                    }
-                }
-            } catch (error) {
-                console.log('Could not load game data:', error);
-            }
-            
             initializePlants();
             
             // Apply decay to ALL plants based on time away
             const now = Date.now();
-            let maxMinutesAway = 0;
+            let maxHoursAway = 0;
             
             Object.keys(gameState.plants).forEach(plantType => {
                 const plant = gameState.plants[plantType];
                 const config = plantConfigs[plantType];
                 const timeSinceLastUpdate = now - (plant.lastUpdate || now);
-                const minutesAway = timeSinceLastUpdate / (1000 * 60);
+                const hoursAway = timeSinceLastUpdate / (1000 * 60 * 60); // Changed to hours
                 
-                if (minutesAway > maxMinutesAway) {
-                    maxMinutesAway = minutesAway;
+                if (hoursAway > maxHoursAway) {
+                    maxHoursAway = hoursAway;
                 }
                 
-                if (minutesAway > 1 && !plant.isDead) {
-                    const waterDecay = minutesAway * config.waterLossRate;
+                if (hoursAway > 0.1 && !plant.isDead) { // Changed to 0.1 hours (6 minutes)
+                    const waterDecay = hoursAway * config.waterLossRate;
                     const oldWaterLevel = plant.waterLevel;
                     
                     plant.waterLevel = Math.max(0, plant.waterLevel - waterDecay);
@@ -157,9 +144,9 @@
                     // Track time at zero water
                     if (plant.waterLevel === 0) {
                         if (oldWaterLevel > 0) {
-                            plant.timeAtZeroWater = minutesAway - (oldWaterLevel / config.waterLossRate);
+                            plant.timeAtZeroWater = hoursAway - (oldWaterLevel / config.waterLossRate);
                         } else {
-                            plant.timeAtZeroWater += minutesAway;
+                            plant.timeAtZeroWater += hoursAway;
                         }
                         
                         if (plant.timeAtZeroWater >= config.deathTime) {
@@ -172,12 +159,12 @@
                     
                     // Happiness decay
                     if (!plant.isDead) {
-                        const happinessDecay = Math.min(minutesAway * 1, 60);
+                        const happinessDecay = Math.min(hoursAway * 1, 60);
                         plant.happiness = Math.max(0, plant.happiness - happinessDecay);
                         
                         // Extra happiness decrease if water is very low
                         if (plant.waterLevel < 20) {
-                            plant.happiness = Math.max(0, plant.happiness - minutesAway * 0.5);
+                            plant.happiness = Math.max(0, plant.happiness - hoursAway * 0.5);
                         }
                     }
                 }
@@ -185,26 +172,16 @@
                 plant.lastUpdate = now;
             });
             
-            if (maxMinutesAway > 1) {
-                showWelcomeBackMessage(maxMinutesAway);
+            if (maxHoursAway > 0.1) {
+                showWelcomeBackMessage(maxHoursAway);
             }
             
             updateUI();
-            saveGame();
         }
 
-        function saveGame() {
-            try {
-                getCurrentPlant().lastUpdate = Date.now();
-                localStorage.setItem('plantCareGame', JSON.stringify(gameState));
-            } catch (error) {
-                console.log('Could not save game data:', error);
-            }
-        }
-
-        function showWelcomeBackMessage(minutesAway) {
-            const hours = Math.floor(minutesAway / 60);
-            const mins = Math.floor(minutesAway % 60);
+        function showWelcomeBackMessage(hoursAway) {
+            const hours = Math.floor(hoursAway);
+            const mins = Math.floor((hoursAway % 1) * 60);
             
             let timeString = '';
             if (hours > 0) {
@@ -270,7 +247,7 @@
                     plant.classList.add('happy');
                     plant.classList.remove('sad');
                 } else if (currentPlant.happiness < 40) {
-                    if ( 30 < currentPlant.waterLevel < 50) {
+                    if ( 30 < currentPlant.waterLevel && currentPlant.waterLevel < 50) {
                         statusElement.textContent = '😓 Unhappy';
                     }
                     else if (currentPlant.waterLevel < 30 ) {
@@ -295,7 +272,6 @@
                 
                 showNotification(3000, '💧 Plant watered! Your plant is happy!');
                 updateUI();
-                saveGame();
             } else {
                 showNotification(3000, '🌊 Plant is already well watered!');
             }
@@ -312,7 +288,6 @@
             
             showNotification(3000, `🎨 Pot is now ${colorName}!`);
             updateUI();
-            saveGame();
         }
 
         function resetPlant() {
@@ -329,7 +304,6 @@
             
             showNotification(5000, `🌱 Your ${gameState.currentPlant} has been reset! Take better care this time!`);
             updateUI();
-            saveGame();
         }
 
         function showPlantMenu() {
@@ -350,7 +324,6 @@
             }
             
             updateUI();
-            saveGame();
             closePlantMenu();
         }
 
@@ -376,17 +349,17 @@
                 
                 if (!plant.isDead) {
                     const timeSinceLastUpdate = now - plant.lastUpdate;
-                    const minutesElapsed = timeSinceLastUpdate / (1000 * 60);
+                    const hoursElapsed = timeSinceLastUpdate / (1000 * 60 * 60); // Changed to hours
                     
-                    const waterLoss = minutesElapsed * config.waterLossRate;
+                    const waterLoss = hoursElapsed * config.waterLossRate;
                     const oldWaterLevel = plant.waterLevel;
                     plant.waterLevel = Math.max(0, plant.waterLevel - waterLoss);
                     
                     if (plant.waterLevel === 0) {
                         if (oldWaterLevel > 0) {
-                            plant.timeAtZeroWater = minutesElapsed - (oldWaterLevel / config.waterLossRate);
+                            plant.timeAtZeroWater = hoursElapsed - (oldWaterLevel / config.waterLossRate);
                         } else {
-                            plant.timeAtZeroWater += minutesElapsed;
+                            plant.timeAtZeroWater += hoursElapsed;
                         }
                         
                         if (plant.timeAtZeroWater >= config.deathTime) {
@@ -401,10 +374,10 @@
                     }
                     
                     if (!plant.isDead) {
-                        plant.happiness = Math.max(0, plant.happiness - minutesElapsed * 1);
+                        plant.happiness = Math.max(0, plant.happiness - hoursElapsed * 1);
                         
                         if (plant.waterLevel < 20) {
-                            plant.happiness = Math.max(0, plant.happiness - minutesElapsed * 2);
+                            plant.happiness = Math.max(0, plant.happiness - hoursElapsed * 2);
                         }
                     }
                 }
@@ -430,22 +403,13 @@
                 if (currentPlant.waterLevel === 0) {
                     const timeLeft = plantConfigs[gameState.currentPlant].deathTime - currentPlant.timeAtZeroWater;
                     if (timeLeft <= 2 && timeLeft > 0) {
-                        showNotification(5000, `⚠️ Your plant will die in ${Math.round(timeLeft)} minutes without water!`);
+                        showNotification(5000, `⚠️ Your plant will die in ${Math.round(timeLeft)} hours without water!`);
                     }
                 }
             }
             
             updateUI();
-            saveGame();
         }
-
-        // Save game state when page is about to unload
-        window.addEventListener('beforeunload', function() {
-            saveGame();
-        });
-
-        // Save periodically in case of unexpected closure
-        setInterval(saveGame, 30000); // Save every 30 seconds
 
         // Initialize game
         loadGame();
